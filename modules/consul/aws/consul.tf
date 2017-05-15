@@ -22,7 +22,15 @@ resource "aws_security_group" "consul" {
         from_port = 22
         to_port = 22
         protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
+        cidr_blocks = ["38.88.201.42/32"]
+    }
+
+    // This is for inbound consul ui
+    ingress {
+        from_port = 8500
+        to_port = 8500
+        protocol = "tcp"
+        cidr_blocks = ["38.88.201.42/32"]
     }
 
     // This is for outbound internet access
