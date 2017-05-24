@@ -1,6 +1,8 @@
 resource "aws_security_group" "consul" {
-    name = "consul_${var.platform}"
+    name = "${var.owner}_${var.env}_consul"
     description = "Consul internal traffic + maintenance."
+
+    vpc_id = "${var.vpc_id}"
 
     // These are for internal traffic
     ingress {
@@ -22,15 +24,7 @@ resource "aws_security_group" "consul" {
         from_port = 22
         to_port = 22
         protocol = "tcp"
-        cidr_blocks = ["38.88.201.42/32"]
-    }
-
-    // This is for inbound consul ui
-    ingress {
-        from_port = 8500
-        to_port = 8500
-        protocol = "tcp"
-        cidr_blocks = ["38.88.201.42/32"]
+        cidr_blocks = "${var.security_group_ssh_ingress}"
     }
 
     // This is for outbound internet access
@@ -43,12 +37,17 @@ resource "aws_security_group" "consul" {
 }
 
 resource "aws_instance" "server" {
+
+    # instance details
     ami = "${lookup(var.ami, "${var.region}-${var.platform}")}"
     instance_type = "${var.instance_type}"
     key_name = "${var.key_name}"
     count = "${var.servers}"
-    security_groups = ["${aws_security_group.consul.name}"]
+    security_groups = ["${aws_security_group.consul.id}"]
+    iam_instance_profile = "${var.ec2_readonly_iam_name}"
+    subnet_id = "${var.subnet_id}"
 
+    # connection details
     connection {
         user = "${lookup(var.user, var.platform)}"
         private_key = "${file("${var.key_path}")}"
@@ -57,29 +56,9 @@ resource "aws_instance" "server" {
     #Instance tags
     tags {
         Name = "${var.tagName}-${var.env}-${count.index}"
-        consul_role = "server"
-        cota_env = "${var.env}"
-        cota_role = "${var.tagName}"
-    }
-
-    provisioner "file" {
-        source = "${path.module}/../shared/scripts/${lookup(var.service_conf, var.platform)}"
-        destination = "/tmp/${lookup(var.service_conf_dest, var.platform)}"
-    }
-
-
-    provisioner "remote-exec" {
-        inline = [
-            "echo ${var.servers} > /tmp/consul-server-count",
-            "echo ${aws_instance.server.0.private_dns} > /tmp/consul-server-addr",
-        ]
-    }
-
-    provisioner "remote-exec" {
-        scripts = [
-            "${path.module}/../shared/scripts/install.sh",
-            "${path.module}/../shared/scripts/service.sh",
-            "${path.module}/../shared/scripts/ip_tables.sh",
-        ]
+        consul = "${var.env}"
+        env = "${var.env}"
+        role = "${var.tagName}"
+        bootstrap = "${count.index == 0 ? true : false }"
     }
 }

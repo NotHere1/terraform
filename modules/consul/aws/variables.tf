@@ -17,7 +17,7 @@ variable "ami" {
   description = "AWS AMI Id, if you change, make sure it is compatible with instance type, not all AMIs allow all instance types "
 
   default = {
-    us-east-1-ubuntu      = "ami-fce3c696"
+    us-east-1-ubuntu      = "ami-a6d4abb0"
     us-east-2-ubuntu      = "ami-b7075dd2"
     us-west-1-ubuntu      = "ami-a9a8e4c9"
     us-west-2-ubuntu      = "ami-9abea4fb"
@@ -70,6 +70,11 @@ variable "key_path" {
   description = "Path to the private key specified by key_name."
 }
 
+variable "instance_type" {
+  default     = "t2.micro"
+  description = "AWS Instance type, if you change, make sure it is compatible with AMI, not all AMIs allow all instance types "
+}
+
 variable "region" {
   default     = "us-east-1"
   description = "The region of AWS, for AMI lookups."
@@ -80,11 +85,6 @@ variable "servers" {
   description = "The number of Consul servers to launch."
 }
 
-variable "instance_type" {
-  default     = "t2.micro"
-  description = "AWS Instance type, if you change, make sure it is compatible with AMI, not all AMIs allow all instance types "
-}
-
 variable "tagName" {
   default     = "consul"
   description = "Name tag for the servers"
@@ -93,4 +93,26 @@ variable "tagName" {
 variable "env" {
   type = "string"
   description = "Which deployment environment the consule cluster is in [development, staging, production]"
+}
+
+variable "security_group_ssh_ingress" {
+  default = ["0.0.0.0/32"]
+  description = "cidr_blocks to whitelist for ssh entry into consul instance"
+}
+
+variable "ec2_readonly_iam_name" {
+  type = "string"
+  description = "name of a iam role that provide read only access to ec2"
+}
+
+variable "subnet_id" {
+  type = "string"
+}
+
+variable "owner" {
+  type = "string"
+}
+
+variable "vpc_id" {
+  type = "string"
 }
